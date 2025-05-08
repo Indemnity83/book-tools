@@ -8,5 +8,5 @@ it('builds path correctly', function (array $metadataArray, string $expected) {
 
     $path = PathBuilder::build($metadata, '/books');
 
-    expect($path)->toBe('/books' . $expected);
+    expect($path)->toBe('/books'.$expected);
 })->with('paths');

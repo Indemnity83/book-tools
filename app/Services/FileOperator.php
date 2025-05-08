@@ -2,21 +2,23 @@
 
 namespace App\Services;
 
+use App\Contracts\Reporter;
 use App\Reporting\ConsoleReporter;
 use App\Reporting\NullReporter;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
-use App\Contracts\Reporter;
 
 class FileOperator
 {
     protected bool $dryRun = false;
+
     protected Filesystem $files;
+
     protected Reporter $reporter;
 
     public function __construct(?Reporter $reporter = null, ?Filesystem $files = null)
     {
-        $this->reporter = $reporter ?? new NullReporter();
+        $this->reporter = $reporter ?? new NullReporter;
         $this->files = $files ?? new Filesystem;
     }
 
@@ -45,7 +47,8 @@ class FileOperator
     protected function perform(string $source, string $target, bool $deleteSource): bool
     {
         if ($this->dryRun) {
-            $this->reporter->line("[Dry Run] Would " . ($deleteSource ? "move" : "copy") . " {$source} -> {$target}");
+            $this->reporter->line('[Dry Run] Would '.($deleteSource ? 'move' : 'copy')." {$source} -> {$target}");
+
             return false;
         }
 
@@ -57,7 +60,7 @@ class FileOperator
             $this->files->copy($source, $target);
         }
 
-        $this->reporter->info(($deleteSource ? "Moved" : "Copied") . ": {$source} -> {$target}");
+        $this->reporter->info(($deleteSource ? 'Moved' : 'Copied').": {$source} -> {$target}");
 
         return true;
     }

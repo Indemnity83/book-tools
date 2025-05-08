@@ -7,15 +7,18 @@ use Illuminate\Support\Str;
 class BookMetadata
 {
     public string $author;
+
     public ?string $series = null;
+
     public ?string $seriesNumber = null;
+
     public string $title;
 
     public function __construct(array $data)
     {
         $this->author = self::sanitize($data['authors'][0] ?? 'Unknown Author');
 
-        if (!empty($data['series'][0])) {
+        if (! empty($data['series'][0])) {
             [$seriesName, $seriesNumber] = $this->parseSeries($data['series'][0]);
             $this->series = self::sanitize($seriesName);
             $this->seriesNumber = $seriesNumber;

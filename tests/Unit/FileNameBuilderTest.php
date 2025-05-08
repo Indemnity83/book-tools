@@ -8,7 +8,7 @@ it('builds filenames correctly', function (array $metadataArray, string $expecte
 
     $fileName = FileNameBuilder::build($metadata, 'm4b');
 
-    expect($fileName)->toBe($expected . '.m4b');
+    expect($fileName)->toBe($expected.'.m4b');
 })->with('filenames');
 
 it('appends part number when provided', function () {
