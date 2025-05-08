@@ -1,7 +1,16 @@
 {
     "name": "indemnity83/book-tools",
+    "version": "0.0.1",
     "description": "Librarian CLI: A simple tool to organize and shelve audiobooks from import folders into a structured library.",
-    "keywords": ["audiobooks", "cli", "console", "library", "organizer", "shelving", "librarian"],
+    "keywords": [
+        "audiobooks",
+        "cli",
+        "console",
+        "library",
+        "organizer",
+        "shelving",
+        "librarian"
+    ],
     "homepage": "https://github.com/indemnity83/book-tools",
     "type": "project",
     "license": "MIT",
@@ -22,6 +31,7 @@
     },
     "require-dev": {
         "laravel/pint": "^1.18.3",
+        "marcocesarato/php-conventional-changelog": "^1.17",
         "mockery/mockery": "^1.6.12",
         "pestphp/pest": "^3.7.1"
     },
@@ -47,5 +57,7 @@
     },
     "minimum-stability": "stable",
     "prefer-stable": true,
-    "bin": ["builds/librarian"]
+    "bin": [
+        "builds/librarian"
+    ]
 }
