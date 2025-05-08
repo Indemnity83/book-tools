@@ -1,0 +1,31 @@
+name: Style
+'on':
+    push:
+        branches:
+            - main
+    workflow_dispatch: null
+    pull_request:
+        branches:
+            - main
+
+jobs:
+    style:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v4.1.7
+              with:
+                  ref: '${{ github.head_ref }}'
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '${{ matrix.php }}'
+                  extensions: 'mbstring, fileinfo'
+                  coverage: none
+
+            - name: Install Composer dependencies
+              run: composer install --prefer-dist --no-interaction --no-progress
+
+            - name: Run Pint
+              run: ./vendor/bin/pint
