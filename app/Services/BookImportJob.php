@@ -7,9 +7,13 @@ use Illuminate\Filesystem\Filesystem;
 class BookImportJob
 {
     protected string $sourcePath;
+
     protected string $destinationPath;
+
     protected BookMetadata $metadata;
+
     protected FileOperator $fileOperator;
+
     protected Filesystem $filesystem;
 
     public function __construct(
@@ -40,7 +44,7 @@ class BookImportJob
 
         foreach ($audioFiles as $file) {
             $newFileName = FileNameBuilder::build($this->metadata, $file->getExtension(), $audioFiles->count() > 1 ? $partNumber : null);
-            $targetPath = $this->destinationPath . '/' . $newFileName;
+            $targetPath = $this->destinationPath.'/'.$newFileName;
 
             if ($this->fileOperator->move($file->getPathname(), $targetPath)) {
                 $report->filesMoved++;
@@ -53,7 +57,7 @@ class BookImportJob
         $extraFiles = $files->filter(fn ($file) => in_array(strtolower($file->getExtension()), ['json', 'jpg', 'pdf']));
 
         foreach ($extraFiles as $file) {
-            $targetPath = $this->destinationPath . '/' . $file->getFilename();
+            $targetPath = $this->destinationPath.'/'.$file->getFilename();
 
             if ($this->fileOperator->move($file->getPathname(), $targetPath)) {
                 $report->filesMoved++;
@@ -61,7 +65,7 @@ class BookImportJob
         }
 
         // Delete source folder if empty
-        if (!$this->fileOperator->isDryRun()
+        if (! $this->fileOperator->isDryRun()
             && count($this->filesystem->files($this->sourcePath)) === 0
             && count($this->filesystem->directories($this->sourcePath)) === 0) {
 

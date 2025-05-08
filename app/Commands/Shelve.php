@@ -14,6 +14,7 @@ use LaravelZero\Framework\Commands\Command;
 class Shelve extends Command
 {
     protected $signature = 'shelve {importFolder} {destinationFolder?} {--dry-run} {--pretend}';
+
     protected $description = 'Organize and shelve audiobooks from the import folder into the destination folder (optional)';
 
     protected Filesystem $filesystem;
@@ -32,8 +33,9 @@ class Shelve extends Command
         $importRoot = rtrim($this->argument('importFolder'), '/');
         $destinationRoot = rtrim($this->argument('destinationFolder') ?? getcwd(), '/');
 
-        if (!$this->filesystem->exists($importRoot)) {
-            $this->error("Import folder does not exist.");
+        if (! $this->filesystem->exists($importRoot)) {
+            $this->error('Import folder does not exist.');
+
             return self::FAILURE;
         }
 
@@ -44,10 +46,11 @@ class Shelve extends Command
         $fileOperator = FileOperator::forConsole($this)->withDryRun($this->isDryRun());
 
         foreach ($bookFolders as $bookFolder) {
-            $metadataPath = $bookFolder . '/metadata.json';
+            $metadataPath = $bookFolder.'/metadata.json';
 
-            if (!$this->filesystem->exists($metadataPath)) {
+            if (! $this->filesystem->exists($metadataPath)) {
                 $this->warn("Skipping {$bookFolder}, no metadata found.");
+
                 continue;
             }
 
@@ -77,10 +80,10 @@ class Shelve extends Command
     protected function outputSummary(array $reports): void
     {
         $this->info('-----------------------------------');
-        $this->info("Shelving complete!");
-        $this->info("Books processed: " . count($reports));
-        $this->info("Files moved: " . array_sum(array_map(fn ($r) => $r->filesMoved, $reports)));
-        $this->info("Folders deleted: " . array_sum(array_map(fn ($r) => $r->folderDeleted ? 1 : 0, $reports)));
+        $this->info('Shelving complete!');
+        $this->info('Books processed: '.count($reports));
+        $this->info('Files moved: '.array_sum(array_map(fn ($r) => $r->filesMoved, $reports)));
+        $this->info('Folders deleted: '.array_sum(array_map(fn ($r) => $r->folderDeleted ? 1 : 0, $reports)));
     }
 
     public function schedule(Schedule $schedule): void

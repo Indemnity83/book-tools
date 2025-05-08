@@ -9,7 +9,7 @@ beforeEach(function () {
     app()->bind(Reporter::class, fn () => new NullReporter);
 
     $this->filesystem = new Filesystem;
-    $this->tmpDir = sys_get_temp_dir() . '/file_operator_test_' . uniqid();
+    $this->tmpDir = sys_get_temp_dir().'/file_operator_test_'.uniqid();
 
     $this->filesystem->ensureDirectoryExists($this->tmpDir);
 });

@@ -5,7 +5,7 @@ use Illuminate\Filesystem\Filesystem;
 beforeEach(function () {
     // Use real Filesystem but with temporary path
     $this->fs = new Filesystem;
-    $this->tmpDir = sys_get_temp_dir() . '/shelve_command_test_' . uniqid();
+    $this->tmpDir = sys_get_temp_dir().'/shelve_command_test_'.uniqid();
     $this->fs->ensureDirectoryExists($this->tmpDir);
 });
 
@@ -15,34 +15,34 @@ afterEach(function () {
 
 it('errors when import folder does not exist', function () {
     $this->artisan('shelve', [
-        'importFolder' => $this->tmpDir . '/nonexistent'
+        'importFolder' => $this->tmpDir.'/nonexistent',
     ])
         ->assertExitCode(1)
         ->expectsOutput('Import folder does not exist.');
 });
 
 it('processes book in dry run mode without moving files', function () {
-    $import = $this->tmpDir . '/import';
+    $import = $this->tmpDir.'/import';
     $this->fs->ensureDirectoryExists($import);
 
     // Create book folder with metadata and files
-    $bookFolder = $import . '/book1';
+    $bookFolder = $import.'/book1';
     $this->fs->ensureDirectoryExists($bookFolder);
 
     file_put_contents("{$bookFolder}/metadata.json", json_encode([
         'authors' => ['Author'],
         'series' => ['Series #1'],
-        'title' => 'Dry Run Book'
+        'title' => 'Dry Run Book',
     ]));
 
     file_put_contents("{$bookFolder}/01.m4b", 'audio part');
 
-    $destination = $this->tmpDir . '/library';
+    $destination = $this->tmpDir.'/library';
 
     $this->artisan('shelve', [
         'importFolder' => $import,
         'destinationFolder' => $destination,
-        '--dry-run' => true
+        '--dry-run' => true,
     ])
         ->assertExitCode(0)
         ->expectsOutputToContain('[Dry Run] Would move')
@@ -56,21 +56,21 @@ it('processes book in dry run mode without moving files', function () {
 });
 
 it('processes book and deletes folder when not dry run', function () {
-    $import = $this->tmpDir . '/import';
+    $import = $this->tmpDir.'/import';
     $this->fs->ensureDirectoryExists($import);
 
-    $bookFolder = $import . '/book2';
+    $bookFolder = $import.'/book2';
     $this->fs->ensureDirectoryExists($bookFolder);
 
     file_put_contents("{$bookFolder}/metadata.json", json_encode([
         'authors' => ['Author'],
         'series' => ['Series #1'],
-        'title' => 'Real Book'
+        'title' => 'Real Book',
     ]));
 
     file_put_contents("{$bookFolder}/01.m4b", 'audio part');
 
-    $destination = $this->tmpDir . '/library';
+    $destination = $this->tmpDir.'/library';
 
     $this->artisan('shelve', [
         'importFolder' => $import,
@@ -86,6 +86,6 @@ it('processes book and deletes folder when not dry run', function () {
     expect($this->fs->exists($bookFolder))->toBeFalse();
 
     // Destination files should exist
-    expect($this->fs->exists($destination . '/Author/Series/1 - Real Book/Real Book, Book 1 of Series by Author.m4b'))->toBeTrue();
-    expect($this->fs->exists($destination . '/Author/Series/1 - Real Book/metadata.json'))->toBeTrue();
+    expect($this->fs->exists($destination.'/Author/Series/1 - Real Book/Real Book, Book 1 of Series by Author.m4b'))->toBeTrue();
+    expect($this->fs->exists($destination.'/Author/Series/1 - Real Book/metadata.json'))->toBeTrue();
 });

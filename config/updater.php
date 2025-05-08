@@ -1,6 +1,5 @@
 <?php
 
-
 use App\Update\UpdateStrategy;
 
 return [
@@ -16,6 +15,6 @@ return [
     |
     */
 
-    'strategy' => UpdateStrategy::class
+    'strategy' => UpdateStrategy::class,
 
 ];

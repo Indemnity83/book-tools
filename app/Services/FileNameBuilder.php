@@ -14,6 +14,6 @@ class FileNameBuilder
             $base .= " (Part {$partNumber})";
         }
 
-        return $base . '.' . $extension;
+        return $base.'.'.$extension;
     }
 }

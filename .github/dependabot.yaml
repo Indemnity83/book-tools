@@ -1,0 +1,23 @@
+version: 2
+updates:
+    # Maintain dependencies for github actions
+    - package-ecosystem: "github-actions"
+      directory: "/"
+      target-branch: "main"
+      schedule:
+          interval: "daily"
+      labels:
+          - "dependency"
+      commit-message:
+          prefix: "🧹 chore(actions)"
+
+    # Maintain dependencies for Composer
+    - package-ecosystem: "composer"
+      directory: "/"
+      target-branch: "main"
+      schedule:
+          interval: "daily"
+      labels:
+          - "dependency"
+      commit-message:
+          prefix: "🧹 chore(deps)"
