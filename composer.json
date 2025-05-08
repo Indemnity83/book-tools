@@ -30,6 +30,7 @@
         "laravel-zero/phar-updater": "^1.4"
     },
     "require-dev": {
+        "captainhook/captainhook-phar": "^5.25",
         "laravel/pint": "^1.18.3",
         "marcocesarato/php-conventional-changelog": "^1.17",
         "mockery/mockery": "^1.6.12",
@@ -52,6 +53,7 @@
         "sort-packages": true,
         "optimize-autoloader": true,
         "allow-plugins": {
+            "captainhook/captainhook-phar": true,
             "pestphp/pest-plugin": true
         }
     },
