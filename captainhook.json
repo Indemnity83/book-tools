@@ -1,0 +1,68 @@
+{
+    "commit-msg": {
+        "enabled": true,
+        "actions": [
+            {
+                "action": "\\Ramsey\\CaptainHook\\ValidateConventionalCommit"
+            }
+        ]
+    },
+    "pre-push": {
+        "enabled": false,
+        "actions": []
+    },
+    "pre-commit": {
+        "enabled": true,
+        "actions": [
+            {
+                "action": "php vendor/bin/pint",
+                "conditions": [
+                    {
+                        "exec": "CaptainHook\\App\\Hook\\Condition\\FileStaged",
+                        "args": ["*.php"]
+                    }
+                ],
+                "options": {
+                    "ignore-failure": false
+                }
+            },
+            {
+                "action": "php vendor/bin/pest",
+                "options": {
+                    "ignore-failure": false
+                },
+                "on-failure": {
+                    "message": "Tests failed! Please fix them before committing."
+                }
+            }
+        ]
+    },
+    "prepare-commit-msg": {
+        "enabled": true,
+        "actions": [
+            {
+                "action": "\\Ramsey\\CaptainHook\\PrepareConventionalCommit"
+            }
+        ]
+    },
+    "post-commit": {
+        "enabled": false,
+        "actions": []
+    },
+    "post-merge": {
+        "enabled": false,
+        "actions": []
+    },
+    "post-checkout": {
+        "enabled": false,
+        "actions": []
+    },
+    "post-rewrite": {
+        "enabled": false,
+        "actions": []
+    },
+    "post-change": {
+        "enabled": false,
+        "actions": []
+    }
+}
