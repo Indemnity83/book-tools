@@ -4,6 +4,21 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [0.0.2](https://github.com/Indemnity83/book-tools/compare/v0.0.1...v0.0.2) (2025-05-08)
+
+### Added
+
+* Support for self-updating the application via GitHub releases (use `librarian self-update`)
+
+### Changed
+
+* Configured Conventional Commits and automatic changelog generation.
+* Added GitHub Actions workflows for continuous integration and release processes.
+* Updated `actions/checkout` GitHub Action from v3 to v4.
+* Updated `softprops/action-gh-release` GitHub Action from v1 to v2.
+
+---
+
 ## [0.0.1](https://github.com/Indemnity83/book-tools/compare/75d2ec559fb29fb8a0395306df4610b58e8bde0e...v0.0.1) (2025-05-08)
 
 The first official release of **Librarian**, a simple CLI tool for organizing and shelving audiobooks.

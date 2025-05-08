@@ -1,6 +1,6 @@
 {
     "name": "indemnity83/book-tools",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Librarian CLI: A simple tool to organize and shelve audiobooks from import folders into a structured library.",
     "keywords": [
         "audiobooks",
