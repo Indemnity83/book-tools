@@ -34,7 +34,8 @@
         "laravel/pint": "^1.18.3",
         "marcocesarato/php-conventional-changelog": "^1.17",
         "mockery/mockery": "^1.6.12",
-        "pestphp/pest": "^3.7.1"
+        "pestphp/pest": "^3.7.1",
+        "ramsey/conventional-commits": "^1.6"
     },
     "autoload": {
         "psr-4": {
