@@ -31,6 +31,11 @@ class Shelve extends Command
 
     public function handle()
     {
+        if ($this->isDryRun()) {
+            $this->warn('[Dry Run] No files will be moved or deleted.');
+            $this->line('');
+        }
+
         app()->bind(Reporter::class, fn () => new ConsoleReporter($this));
 
         $importRoot = rtrim($this->argument('importFolder'), '/');
@@ -90,7 +95,13 @@ class Shelve extends Command
                 return;
             }
 
-            $this->task('  - Shelving "'.$metadata->title.'" by '.$metadata->author, function () use ($bookFolder, $metadata, $destinationRoot) {
+            $label = 'Shelving "'.$metadata->title.'" by '.$metadata->author;
+
+            if ($this->isDryRun()) {
+                $label = '[Dry Run] '.$label;
+            }
+
+            $this->task('  - '.$label, function () use ($bookFolder, $metadata, $destinationRoot) {
                 $job = new BookImportJob(
                     $bookFolder,
                     $metadata,
@@ -124,10 +135,10 @@ class Shelve extends Command
         $foldersDeleted = array_sum(array_map(fn ($r) => $r->folderDeleted ? 1 : 0, $reports));
 
         $this->info('-----------------------------------');
-        $this->info('Shelving complete!');
+        $this->info($this->isDryRun() ? 'Dry run complete!' : 'Shelving complete!');
         $this->info("Books processed: {$booksProcessed}");
-        $this->info("Files moved: {$filesMoved}");
-        $this->info("Folders deleted: {$foldersDeleted}");
+        $this->info('Files '.($this->isDryRun() ? 'that would have been moved' : 'moved').": {$filesMoved}");
+        $this->info('Folders '.($this->isDryRun() ? 'that would have been deleted' : 'deleted').": {$foldersDeleted}");
     }
 
     protected function taskGroup(string $title, callable $callback): void
