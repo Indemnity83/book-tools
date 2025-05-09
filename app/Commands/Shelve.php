@@ -13,7 +13,8 @@ use LaravelZero\Framework\Commands\Command;
 
 class Shelve extends Command
 {
-    protected $signature = 'shelve {importFolder} {destinationFolder?} {--dry-run} {--pretend}';
+    protected $signature = 'shelve {importFolder} {destinationFolder?} {--dry-run} {--pretend}
+                                {--summary : Show summary report at the end}';
 
     protected $description = 'Organize and shelve audiobooks from the import folder into the destination folder (optional)';
 
@@ -53,7 +54,9 @@ class Shelve extends Command
             $this->processBook($bookFolder, $destinationRoot);
         }
 
-        $this->outputSummary($this->reports);
+        if ($this->option('summary')) {
+            $this->outputSummary($this->reports);
+        }
 
         return self::SUCCESS;
     }
