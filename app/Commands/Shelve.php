@@ -5,7 +5,6 @@ namespace App\Commands;
 use App\Contracts\Reporter;
 use App\Reporting\ConsoleReporter;
 use App\Services\BookImportJob;
-use App\Services\BookImportReport;
 use App\Services\BookMetadata;
 use App\Services\FileOperator;
 use Illuminate\Console\Scheduling\Schedule;
@@ -51,17 +50,7 @@ class Shelve extends Command
         }
 
         foreach ($bookFolders as $bookFolder) {
-            $this->task('Processing '.basename($bookFolder), function () use ($bookFolder, $destinationRoot) {
-                $report = $this->processBook($bookFolder, $destinationRoot);
-
-                if ($report) {
-                    $this->reports[] = $report;
-
-                    return true;
-                }
-
-                return false;
-            });
+            $this->processBook($bookFolder, $destinationRoot);
         }
 
         $this->outputSummary($this->reports);
@@ -69,36 +58,49 @@ class Shelve extends Command
         return self::SUCCESS;
     }
 
-    protected function processBook(string $bookFolder, string $destinationRoot): ?BookImportReport
+    protected function processBook(string $bookFolder, string $destinationRoot): void
     {
         $metadataPath = $bookFolder.'/metadata.json';
 
-        if (! $this->filesystem->exists($metadataPath)) {
-            $this->warn(' - Skipped: No metadata.json found.');
+        $this->taskGroup('Processing: '.basename($bookFolder), function () use ($metadataPath, $bookFolder, $destinationRoot) {
+            $metadata = null;
 
-            return null;
-        }
+            $this->task('  - Reading metadata', function () use (&$metadata, $metadataPath) {
+                if (! $this->filesystem->exists($metadataPath)) {
+                    $this->warn('Missing metadata file.');
 
-        $this->line(' - Reading metadata...');
+                    return false;
+                }
 
-        try {
-            $metadata = BookMetadata::fromJsonFile($metadataPath);
-        } catch (\Throwable $e) {
-            $this->warn(' - Failed to parse metadata: '.$e->getMessage());
+                try {
+                    $metadata = BookMetadata::fromJsonFile($metadataPath);
+                } catch (\Throwable $e) {
+                    $this->warn('Failed to parse metadata: '.$e->getMessage());
 
-            return null;
-        }
+                    return false;
+                }
 
-        $this->line(" - Shelving {$metadata->title} by {$metadata->author}...");
+                return true;
+            });
 
-        $job = new BookImportJob(
-            $bookFolder,
-            $metadata,
-            $destinationRoot,
-            $this->makeFileOperator()
-        );
+            if (! $metadata) {
+                return;
+            }
 
-        return $job->process();
+            $this->task('  - Shelving "'.$metadata->title.'" by '.$metadata->author, function () use ($bookFolder, $metadata, $destinationRoot) {
+                $job = new BookImportJob(
+                    $bookFolder,
+                    $metadata,
+                    $destinationRoot,
+                    $this->makeFileOperator()
+                );
+
+                $report = $job->process();
+                $this->reports[] = $report;
+
+                return true;
+            });
+        });
     }
 
     protected function makeFileOperator()
@@ -123,6 +125,13 @@ class Shelve extends Command
         $this->info("Books processed: {$booksProcessed}");
         $this->info("Files moved: {$filesMoved}");
         $this->info("Folders deleted: {$foldersDeleted}");
+    }
+
+    protected function taskGroup(string $title, callable $callback): void
+    {
+        $this->info($title);
+        $callback();
+        $this->line('');
     }
 
     public function schedule(Schedule $schedule): void

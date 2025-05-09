@@ -47,8 +47,6 @@ class FileOperator
     protected function perform(string $source, string $target, bool $deleteSource): bool
     {
         if ($this->dryRun) {
-            $this->reporter->line('[Dry Run] Would '.($deleteSource ? 'move' : 'copy')." {$source} -> {$target}");
-
             return false;
         }
 
@@ -59,8 +57,6 @@ class FileOperator
         } else {
             $this->files->copy($source, $target);
         }
-
-        $this->reporter->info(($deleteSource ? 'Moved' : 'Copied').": {$source} -> {$target}");
 
         return true;
     }
