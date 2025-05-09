@@ -40,11 +40,7 @@ class FileOperator
     protected function perform(string $source, string $target, bool $deleteSource): bool
     {
         if ($this->files->exists($target)) {
-            $message = $this->dryRun
-                ? 'Would refuse to overwrite an existing file'
-                : 'Refusing to overwrite an existing file';
-
-            $this->reporter->error($message, ['target' => $target]);
+            $this->reporter->error('"'.basename($target).'" already exists', ['target' => $target]);
 
             return false;
         }

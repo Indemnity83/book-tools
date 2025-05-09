@@ -8,7 +8,7 @@ class NullReporter implements Reporter
 {
     use BufferedReporter;
 
-    public function flush(bool $verbose = false): void
+    public function flush(?int $verbose = null): void
     {
         $this->messageBuffer = []; // no-op
     }

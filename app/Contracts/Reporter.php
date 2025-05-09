@@ -22,5 +22,5 @@ interface Reporter
 
     public function errors(): array;
 
-    public function flush(bool $verbose = false): void;
+    public function flush(?int $verbosity = null): void;
 }
