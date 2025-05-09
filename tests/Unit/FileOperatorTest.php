@@ -1,10 +1,8 @@
 <?php
 
 use App\Contracts\Reporter;
-use App\Reporting\ConsoleReporter;
 use App\Reporting\NullReporter;
 use App\Services\FileOperator;
-use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 
 beforeEach(function () {
@@ -75,9 +73,30 @@ it('returns false when dry run is not enabled', function () {
     expect($op->isDryRun())->toBeFalse();
 });
 
-it('constructs with console reporter via forConsole', function () {
-    $op = FileOperator::forConsole(new Command);
+it('fails when target file already exists', function () {
+    $fs = new Filesystem;
+    $tmp = sys_get_temp_dir().'/fileop_'.uniqid();
+    $fs->ensureDirectoryExists($tmp);
 
-    expect($op)->toBeInstanceOf(FileOperator::class);
-    expect($op->getReporter())->toBeInstanceOf(ConsoleReporter::class);
+    $source = $tmp.'/source.m4b';
+    $target = $tmp.'/target.m4b';
+
+    file_put_contents($source, 'SOURCE DATA');
+    file_put_contents($target, 'EXISTING TARGET DATA');
+
+    $op = new FileOperator(new NullReporter, $fs);
+
+    $result = $op->move($source, $target);
+
+    expect($result)->toBeFalse();
+
+    // Assert source is still there and unchanged
+    expect($fs->exists($source))->toBeTrue();
+    expect(file_get_contents($source))->toBe('SOURCE DATA');
+
+    // Assert target is still there and was not overwritten
+    expect($fs->exists($target))->toBeTrue();
+    expect(file_get_contents($target))->toBe('EXISTING TARGET DATA');
+
+    $fs->deleteDirectory($tmp);
 });

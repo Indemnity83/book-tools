@@ -11,4 +11,14 @@ interface Reporter
     public function error(string $message): void;
 
     public function line(string $message): void;
+
+    public function lines(): array;
+
+    public function infos(): array;
+
+    public function warnings(): array;
+
+    public function errors(): array;
+
+    public function flush(bool $verbose = false): void;
 }

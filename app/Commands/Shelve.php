@@ -22,11 +22,16 @@ class Shelve extends Command
 
     protected array $reports = [];
 
+    protected ConsoleReporter $reporter;
+
     public function __construct()
     {
         parent::__construct();
 
         $this->filesystem = new Filesystem;
+        $this->reporter = new ConsoleReporter($this);
+
+        app()->singleton(Reporter::class, fn () => $this->reporter);
     }
 
     public function handle()
@@ -35,8 +40,6 @@ class Shelve extends Command
             $this->warn('[Dry Run] No files will be moved or deleted.');
             $this->line('');
         }
-
-        app()->bind(Reporter::class, fn () => new ConsoleReporter($this));
 
         $importRoot = rtrim($this->argument('importFolder'), '/');
         $destinationRoot = rtrim($this->argument('destinationFolder') ?? getcwd(), '/');
@@ -112,15 +115,16 @@ class Shelve extends Command
                 $report = $job->process();
                 $this->reports[] = $report;
 
-                return true;
+                return empty(app(Reporter::class)->errors());
             });
+
+            app(Reporter::class)->flush();
         });
     }
 
     protected function makeFileOperator()
     {
-        return FileOperator::forConsole($this)
-            ->withDryRun($this->isDryRun());
+        return app(FileOperator::class)->withDryRun($this->isDryRun());
     }
 
     protected function isDryRun(): bool
