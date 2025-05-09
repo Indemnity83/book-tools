@@ -27,8 +27,18 @@ class BookMetadata
         $this->title = self::sanitize($data['title'] ?? 'Unknown Title');
     }
 
-    public static function fromArray(array $data): self
+    public static function fromJsonFile(string $path): BookMetadata
     {
+        if (! file_exists($path)) {
+            throw new \InvalidArgumentException("Metadata file not found: {$path}");
+        }
+
+        $data = json_decode(file_get_contents($path), true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \RuntimeException('Invalid JSON in metadata: '.json_last_error_msg());
+        }
+
         return new self($data);
     }
 
@@ -38,7 +48,7 @@ class BookMetadata
             return [trim($matches[1]), $matches[2]];
         }
 
-        return [$series, null];
+        throw new \RuntimeException("Invalid series format: {$series}");
     }
 
     protected static function sanitize(string $input): string

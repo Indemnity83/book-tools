@@ -5,6 +5,7 @@ namespace App\Commands;
 use App\Contracts\Reporter;
 use App\Reporting\ConsoleReporter;
 use App\Services\BookImportJob;
+use App\Services\BookImportReport;
 use App\Services\BookMetadata;
 use App\Services\FileOperator;
 use Illuminate\Console\Scheduling\Schedule;
@@ -18,6 +19,8 @@ class Shelve extends Command
     protected $description = 'Organize and shelve audiobooks from the import folder into the destination folder (optional)';
 
     protected Filesystem $filesystem;
+
+    protected array $reports = [];
 
     public function __construct()
     {
@@ -40,36 +43,68 @@ class Shelve extends Command
         }
 
         $bookFolders = $this->filesystem->directories($importRoot);
-        $reports = [];
 
-        // Prepare FileOperator with correct dry run setting
-        $fileOperator = FileOperator::forConsole($this)->withDryRun($this->isDryRun());
+        if (empty($bookFolders)) {
+            $this->info('No books found in import folder.');
 
-        foreach ($bookFolders as $bookFolder) {
-            $metadataPath = $bookFolder.'/metadata.json';
-
-            if (! $this->filesystem->exists($metadataPath)) {
-                $this->warn("Skipping {$bookFolder}, no metadata found.");
-
-                continue;
-            }
-
-            $metadata = BookMetadata::fromArray(json_decode(file_get_contents($metadataPath), true));
-
-            $job = new BookImportJob(
-                $bookFolder,
-                $metadata,
-                $destinationRoot,
-                $fileOperator,
-                $this->filesystem
-            );
-
-            $reports[] = $job->process();
+            return self::SUCCESS;
         }
 
-        $this->outputSummary($reports);
+        foreach ($bookFolders as $bookFolder) {
+            $this->task('Processing '.basename($bookFolder), function () use ($bookFolder, $destinationRoot) {
+                $report = $this->processBook($bookFolder, $destinationRoot);
+
+                if ($report) {
+                    $this->reports[] = $report;
+
+                    return true;
+                }
+
+                return false;
+            });
+        }
+
+        $this->outputSummary($this->reports);
 
         return self::SUCCESS;
+    }
+
+    protected function processBook(string $bookFolder, string $destinationRoot): ?BookImportReport
+    {
+        $metadataPath = $bookFolder.'/metadata.json';
+
+        if (! $this->filesystem->exists($metadataPath)) {
+            $this->warn(' - Skipped: No metadata.json found.');
+
+            return null;
+        }
+
+        $this->line(' - Reading metadata...');
+
+        try {
+            $metadata = BookMetadata::fromJsonFile($metadataPath);
+        } catch (\Throwable $e) {
+            $this->warn(' - Failed to parse metadata: '.$e->getMessage());
+
+            return null;
+        }
+
+        $this->line(" - Shelving {$metadata->title} by {$metadata->author}...");
+
+        $job = new BookImportJob(
+            $bookFolder,
+            $metadata,
+            $destinationRoot,
+            $this->makeFileOperator()
+        );
+
+        return $job->process();
+    }
+
+    protected function makeFileOperator()
+    {
+        return FileOperator::forConsole($this)
+            ->withDryRun($this->isDryRun());
     }
 
     protected function isDryRun(): bool
@@ -79,11 +114,15 @@ class Shelve extends Command
 
     protected function outputSummary(array $reports): void
     {
+        $booksProcessed = count($reports);
+        $filesMoved = array_sum(array_map(fn ($r) => $r->filesMoved, $reports));
+        $foldersDeleted = array_sum(array_map(fn ($r) => $r->folderDeleted ? 1 : 0, $reports));
+
         $this->info('-----------------------------------');
         $this->info('Shelving complete!');
-        $this->info('Books processed: '.count($reports));
-        $this->info('Files moved: '.array_sum(array_map(fn ($r) => $r->filesMoved, $reports)));
-        $this->info('Folders deleted: '.array_sum(array_map(fn ($r) => $r->folderDeleted ? 1 : 0, $reports)));
+        $this->info("Books processed: {$booksProcessed}");
+        $this->info("Files moved: {$filesMoved}");
+        $this->info("Folders deleted: {$foldersDeleted}");
     }
 
     public function schedule(Schedule $schedule): void

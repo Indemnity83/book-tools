@@ -69,4 +69,9 @@ class FileOperator
     {
         return $this->dryRun;
     }
+
+    public function getReporter(): Reporter
+    {
+        return $this->reporter;
+    }
 }

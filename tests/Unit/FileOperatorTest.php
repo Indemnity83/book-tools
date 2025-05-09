@@ -1,8 +1,10 @@
 <?php
 
 use App\Contracts\Reporter;
+use App\Reporting\ConsoleReporter;
 use App\Reporting\NullReporter;
 use App\Services\FileOperator;
+use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 
 beforeEach(function () {
@@ -61,4 +63,21 @@ it('moves file when not dry run', function () {
     expect(file_exists($source))->toBeFalse();
     expect(file_exists($target))->toBeTrue();
     expect(file_get_contents($target))->toBe('test');
+});
+
+it('returns true when dry run is enabled', function () {
+    $op = (new FileOperator(new NullReporter))->withDryRun(true);
+    expect($op->isDryRun())->toBeTrue();
+});
+
+it('returns false when dry run is not enabled', function () {
+    $op = (new FileOperator(new NullReporter))->withDryRun(false);
+    expect($op->isDryRun())->toBeFalse();
+});
+
+it('constructs with console reporter via forConsole', function () {
+    $op = FileOperator::forConsole(new Command);
+
+    expect($op)->toBeInstanceOf(FileOperator::class);
+    expect($op->getReporter())->toBeInstanceOf(ConsoleReporter::class);
 });

@@ -45,7 +45,9 @@ it('processes book in dry run mode without moving files', function () {
         '--dry-run' => true,
     ])
         ->assertExitCode(0)
-        ->expectsOutputToContain('[Dry Run] Would move')
+        ->expectsOutputToContain('Processing book1')
+        ->expectsOutputToContain('- Reading metadata...')
+        ->expectsOutputToContain('- Shelving Dry Run Book by Author...')
         ->expectsOutput('Shelving complete!')
         ->expectsOutput('Books processed: 1')
         ->expectsOutput('Files moved: 0')
@@ -77,6 +79,9 @@ it('processes book and deletes folder when not dry run', function () {
         'destinationFolder' => $destination,
     ])
         ->assertExitCode(0)
+        ->expectsOutputToContain('Processing book2')
+        ->expectsOutputToContain('- Reading metadata...')
+        ->expectsOutputToContain('- Shelving Real Book by Author...')
         ->expectsOutput('Shelving complete!')
         ->expectsOutput('Books processed: 1')
         ->expectsOutput('Files moved: 2')
