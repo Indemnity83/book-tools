@@ -10,6 +10,6 @@ class NullReporter implements Reporter
 
     public function flush(bool $verbose = false): void
     {
-        $this->buffer = []; // no-op
+        $this->messageBuffer = []; // no-op
     }
 }

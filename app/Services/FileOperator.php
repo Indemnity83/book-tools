@@ -10,14 +10,12 @@ class FileOperator
 {
     protected bool $dryRun = false;
 
-    protected Filesystem $files;
-
-    protected Reporter $reporter;
-
     protected array $simulatedDirectories = [];
 
-    public function __construct(?Reporter $reporter = null, ?Filesystem $files = null)
-    {
+    public function __construct(
+        protected ?Reporter $reporter = null,
+        protected ?Filesystem $files = null
+    ) {
         $this->reporter = $reporter ?? new NullReporter;
         $this->files = $files ?? new Filesystem;
     }
@@ -55,11 +53,11 @@ class FileOperator
 
         if ($this->dryRun) {
             if (! $this->files->isDirectory($directory) && ! in_array($directory, $this->simulatedDirectories)) {
-                $this->reporter->line('[Dry Run] Would make directory', ['directory' => $directory]);
+                $this->reporter->simulate('mkdir', ['directory' => $directory]);
                 $this->simulatedDirectories[] = $directory;
             }
 
-            $this->reporter->line('[Dry Run] Would '.($deleteSource ? 'move' : 'copy').' a file', ['source' => $source, 'target' => $target]);
+            $this->reporter->simulate($deleteSource ? 'move' : 'copy', ['source' => $source, 'target' => $target]);
 
             return false;
         }

@@ -100,10 +100,6 @@ class Shelve extends Command
 
             $label = 'Shelving "'.$metadata->title.'" by '.$metadata->author;
 
-            if ($this->isDryRun()) {
-                $label = '[Dry Run] '.$label;
-            }
-
             $this->task('  - '.$label, function () use ($bookFolder, $metadata, $destinationRoot) {
                 $job = new BookImportJob(
                     $bookFolder,

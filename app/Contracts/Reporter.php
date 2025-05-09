@@ -4,6 +4,8 @@ namespace App\Contracts;
 
 interface Reporter
 {
+    public function simulate(string $action, array $context = []): void;
+
     public function info(string $message): void;
 
     public function warn(string $message): void;

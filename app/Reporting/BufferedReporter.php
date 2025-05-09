@@ -4,26 +4,38 @@ namespace App\Reporting;
 
 trait BufferedReporter
 {
-    protected array $buffer = [];
+    protected array $messageBuffer = [];
+
+    protected array $dryRunActions = [];
+
+    public function simulate(string $type, array $context = []): void
+    {
+        $this->dryRunActions[] = compact('type', 'context');
+    }
 
     public function line(string $message, array $context = []): void
     {
-        $this->buffer[] = ['level' => 'line', 'message' => $message, 'context' => $context];
+        $this->messageBuffer[] = ['level' => 'line', 'message' => $message, 'context' => $context];
     }
 
     public function info(string $message, array $context = []): void
     {
-        $this->buffer[] = ['level' => 'info', 'message' => $message, 'context' => $context];
+        $this->messageBuffer[] = ['level' => 'info', 'message' => $message, 'context' => $context];
     }
 
     public function warn(string $message, array $context = []): void
     {
-        $this->buffer[] = ['level' => 'warn', 'message' => $message, 'context' => $context];
+        $this->messageBuffer[] = ['level' => 'warn', 'message' => $message, 'context' => $context];
     }
 
     public function error(string $message, array $context = []): void
     {
-        $this->buffer[] = ['level' => 'error', 'message' => $message, 'context' => $context];
+        $this->messageBuffer[] = ['level' => 'error', 'message' => $message, 'context' => $context];
+    }
+
+    public function dryRuns(): array
+    {
+        return $this->filtered('dry_run');
     }
 
     public function lines(): array
@@ -48,7 +60,7 @@ trait BufferedReporter
 
     protected function filtered(string $level): array
     {
-        return collect($this->buffer)
+        return collect($this->messageBuffer)
             ->filter(fn ($e) => $e['level'] === $level)
             ->pluck('message')
             ->values()

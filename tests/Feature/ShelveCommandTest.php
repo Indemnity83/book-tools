@@ -45,10 +45,10 @@ it('processes book in dry run mode without moving files', function () {
         '--dry-run' => true,
     ])
         ->assertExitCode(0)
-        ->expectsOutputToContain('[Dry Run] No files will be moved or deleted.')
+        ->expectsOutputToContain('No files will be moved or deleted.')
         ->expectsOutputToContain('Processing: book1')
         ->expectsOutputToContain('- Reading metadata')
-        ->expectsOutputToContain('- [Dry Run] Shelving "Dry Run Book" by Author');
+        ->expectsOutputToContain('- Shelving "Dry Run Book" by Author');
 
     // Source should still exist
     expect($this->fs->exists($bookFolder))->toBeTrue();
