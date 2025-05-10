@@ -3,28 +3,21 @@
 namespace App\Services;
 
 use App\Contracts\Reporter;
-use App\Reporting\ConsoleReporter;
 use App\Reporting\NullReporter;
-use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 
 class FileOperator
 {
     protected bool $dryRun = false;
 
-    protected Filesystem $files;
+    protected array $simulatedDirectories = [];
 
-    protected Reporter $reporter;
-
-    public function __construct(?Reporter $reporter = null, ?Filesystem $files = null)
-    {
+    public function __construct(
+        protected ?Reporter $reporter = null,
+        protected ?Filesystem $files = null
+    ) {
         $this->reporter = $reporter ?? new NullReporter;
         $this->files = $files ?? new Filesystem;
-    }
-
-    public static function forConsole(Command $command): self
-    {
-        return new self(new ConsoleReporter($command));
     }
 
     public function withDryRun(bool $dryRun): self
@@ -46,13 +39,26 @@ class FileOperator
 
     protected function perform(string $source, string $target, bool $deleteSource): bool
     {
-        if ($this->dryRun) {
-            $this->reporter->line('[Dry Run] Would '.($deleteSource ? 'move' : 'copy')." {$source} -> {$target}");
+        if ($this->files->exists($target)) {
+            $this->reporter->error('"'.basename($target).'" already exists', ['target' => $target]);
 
             return false;
         }
 
-        $this->files->ensureDirectoryExists(dirname($target));
+        $directory = dirname($target);
+
+        if ($this->dryRun) {
+            if (! $this->files->isDirectory($directory) && ! in_array($directory, $this->simulatedDirectories)) {
+                $this->reporter->simulate('mkdir', ['directory' => $directory]);
+                $this->simulatedDirectories[] = $directory;
+            }
+
+            $this->reporter->simulate($deleteSource ? 'move' : 'copy', ['source' => $source, 'target' => $target]);
+
+            return false;
+        }
+
+        $this->files->ensureDirectoryExists($directory);
 
         if ($deleteSource) {
             $this->files->move($source, $target);
@@ -60,7 +66,7 @@ class FileOperator
             $this->files->copy($source, $target);
         }
 
-        $this->reporter->info(($deleteSource ? 'Moved' : 'Copied').": {$source} -> {$target}");
+        $this->reporter->info(ucfirst($deleteSource ? 'Moved' : 'Copied').": {$source} -> {$target}");
 
         return true;
     }

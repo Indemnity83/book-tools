@@ -45,11 +45,10 @@ it('processes book in dry run mode without moving files', function () {
         '--dry-run' => true,
     ])
         ->assertExitCode(0)
-        ->expectsOutputToContain('[Dry Run] Would move')
-        ->expectsOutput('Shelving complete!')
-        ->expectsOutput('Books processed: 1')
-        ->expectsOutput('Files moved: 0')
-        ->expectsOutput('Folders deleted: 0');
+        ->expectsOutputToContain('No files will be moved or deleted.')
+        ->expectsOutputToContain('Processing: book1')
+        ->expectsOutputToContain('- Reading metadata')
+        ->expectsOutputToContain('- Shelving "Dry Run Book" by Author');
 
     // Source should still exist
     expect($this->fs->exists($bookFolder))->toBeTrue();
@@ -77,10 +76,13 @@ it('processes book and deletes folder when not dry run', function () {
         'destinationFolder' => $destination,
     ])
         ->assertExitCode(0)
-        ->expectsOutput('Shelving complete!')
-        ->expectsOutput('Books processed: 1')
-        ->expectsOutput('Files moved: 2')
-        ->expectsOutput('Folders deleted: 1');
+        ->expectsOutputToContain('Processing: book2')
+        ->expectsOutputToContain('- Reading metadata')
+        ->expectsOutputToContain('- Shelving "Real Book" by Author')
+        ->doesntExpectOutput('Shelving complete!')
+        ->doesntExpectOutput('Books processed')
+        ->doesntExpectOutput('Files moved')
+        ->doesntExpectOutput('Folders deleted');
 
     // Source should be deleted
     expect($this->fs->exists($bookFolder))->toBeFalse();
@@ -88,4 +90,33 @@ it('processes book and deletes folder when not dry run', function () {
     // Destination files should exist
     expect($this->fs->exists($destination.'/Author/Series/1 - Real Book/Real Book, Book 1 of Series by Author.m4b'))->toBeTrue();
     expect($this->fs->exists($destination.'/Author/Series/1 - Real Book/metadata.json'))->toBeTrue();
+});
+
+it('shows summary information when the summary flag is set', function () {
+    $import = $this->tmpDir.'/import';
+    $this->fs->ensureDirectoryExists($import);
+
+    $bookFolder = $import.'/book2';
+    $this->fs->ensureDirectoryExists($bookFolder);
+
+    file_put_contents("{$bookFolder}/metadata.json", json_encode([
+        'authors' => ['Author'],
+        'series' => ['Series #1'],
+        'title' => 'Real Book',
+    ]));
+
+    file_put_contents("{$bookFolder}/01.m4b", 'audio part');
+
+    $destination = $this->tmpDir.'/library';
+
+    $this->artisan('shelve', [
+        'importFolder' => $import,
+        'destinationFolder' => $destination,
+        '--summary' => true,
+    ])
+        ->assertExitCode(0)
+        ->expectsOutput('Shelving complete!')
+        ->expectsOutput('Books processed: 1')
+        ->expectsOutput('Files moved: 2')
+        ->expectsOutput('Folders deleted: 1');
 });

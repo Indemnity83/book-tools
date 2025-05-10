@@ -13,22 +13,33 @@ use LaravelZero\Framework\Commands\Command;
 
 class Shelve extends Command
 {
-    protected $signature = 'shelve {importFolder} {destinationFolder?} {--dry-run} {--pretend}';
+    protected $signature = 'shelve {importFolder} {destinationFolder?} {--dry-run} {--pretend}
+                                {--summary : Show summary report at the end}';
 
     protected $description = 'Organize and shelve audiobooks from the import folder into the destination folder (optional)';
 
     protected Filesystem $filesystem;
+
+    protected array $reports = [];
+
+    protected ConsoleReporter $reporter;
 
     public function __construct()
     {
         parent::__construct();
 
         $this->filesystem = new Filesystem;
+        $this->reporter = new ConsoleReporter($this);
+
+        app()->singleton(Reporter::class, fn () => $this->reporter);
     }
 
     public function handle()
     {
-        app()->bind(Reporter::class, fn () => new ConsoleReporter($this));
+        if ($this->isDryRun()) {
+            $this->warn('[Dry Run] No files will be moved or deleted.');
+            $this->line('');
+        }
 
         $importRoot = rtrim($this->argument('importFolder'), '/');
         $destinationRoot = rtrim($this->argument('destinationFolder') ?? getcwd(), '/');
@@ -40,36 +51,76 @@ class Shelve extends Command
         }
 
         $bookFolders = $this->filesystem->directories($importRoot);
-        $reports = [];
 
-        // Prepare FileOperator with correct dry run setting
-        $fileOperator = FileOperator::forConsole($this)->withDryRun($this->isDryRun());
+        if (empty($bookFolders)) {
+            $this->info('No books found in import folder.');
 
-        foreach ($bookFolders as $bookFolder) {
-            $metadataPath = $bookFolder.'/metadata.json';
-
-            if (! $this->filesystem->exists($metadataPath)) {
-                $this->warn("Skipping {$bookFolder}, no metadata found.");
-
-                continue;
-            }
-
-            $metadata = BookMetadata::fromArray(json_decode(file_get_contents($metadataPath), true));
-
-            $job = new BookImportJob(
-                $bookFolder,
-                $metadata,
-                $destinationRoot,
-                $fileOperator,
-                $this->filesystem
-            );
-
-            $reports[] = $job->process();
+            return self::SUCCESS;
         }
 
-        $this->outputSummary($reports);
+        foreach ($bookFolders as $bookFolder) {
+            $this->processBook($bookFolder, $destinationRoot);
+        }
+
+        if ($this->option('summary')) {
+            $this->outputSummary($this->reports);
+        }
 
         return self::SUCCESS;
+    }
+
+    protected function processBook(string $bookFolder, string $destinationRoot): void
+    {
+        $metadataPath = $bookFolder.'/metadata.json';
+
+        $this->taskGroup('Processing: '.basename($bookFolder), function () use ($metadataPath, $bookFolder, $destinationRoot) {
+            $metadata = null;
+
+            $this->task('  - Reading metadata', function () use (&$metadata, $metadataPath) {
+                if (! $this->filesystem->exists($metadataPath)) {
+                    $this->warn('Missing metadata file.');
+
+                    return false;
+                }
+
+                try {
+                    $metadata = BookMetadata::fromJsonFile($metadataPath);
+                } catch (\Throwable $e) {
+                    $this->warn('Failed to parse metadata: '.$e->getMessage());
+
+                    return false;
+                }
+
+                return true;
+            });
+
+            if (! $metadata) {
+                return;
+            }
+
+            $label = 'Shelving "'.$metadata->title.'" by '.$metadata->author;
+
+            $this->task('  - '.$label, function () use ($bookFolder, $metadata, $destinationRoot) {
+                $job = new BookImportJob(
+                    $bookFolder,
+                    $metadata,
+                    $destinationRoot,
+                    $this->makeFileOperator()
+                );
+
+                $report = $job->process();
+                $this->reports[] = $report;
+
+                return empty(app(Reporter::class)->errors());
+            });
+
+            app(Reporter::class)->flush();
+        });
+    }
+
+    protected function makeFileOperator()
+    {
+        return app(FileOperator::class)->withDryRun($this->isDryRun());
     }
 
     protected function isDryRun(): bool
@@ -79,11 +130,22 @@ class Shelve extends Command
 
     protected function outputSummary(array $reports): void
     {
+        $booksProcessed = count($reports);
+        $filesMoved = array_sum(array_map(fn ($r) => $r->filesMoved, $reports));
+        $foldersDeleted = array_sum(array_map(fn ($r) => $r->folderDeleted ? 1 : 0, $reports));
+
         $this->info('-----------------------------------');
-        $this->info('Shelving complete!');
-        $this->info('Books processed: '.count($reports));
-        $this->info('Files moved: '.array_sum(array_map(fn ($r) => $r->filesMoved, $reports)));
-        $this->info('Folders deleted: '.array_sum(array_map(fn ($r) => $r->folderDeleted ? 1 : 0, $reports)));
+        $this->info($this->isDryRun() ? 'Dry run complete!' : 'Shelving complete!');
+        $this->info("Books processed: {$booksProcessed}");
+        $this->info('Files '.($this->isDryRun() ? 'that would have been moved' : 'moved').": {$filesMoved}");
+        $this->info('Folders '.($this->isDryRun() ? 'that would have been deleted' : 'deleted').": {$foldersDeleted}");
+    }
+
+    protected function taskGroup(string $title, callable $callback): void
+    {
+        $this->info($title);
+        $callback();
+        $this->line('');
     }
 
     public function schedule(Schedule $schedule): void
